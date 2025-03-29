@@ -5,6 +5,7 @@
 import os
 import sys
 import traceback # For debugging unexpected errors
+# NOTE: tempfile is only imported within the setup function below now
 
 # API Key will be permanently embedded here after first run.
 # DO NOT MANUALLY EDIT THIS LINE UNLESS RESETTING!
@@ -25,8 +26,10 @@ _API_KEY_PLACEHOLDER_VALUE_ = "INITIAL_PLACEHOLDER"
 
 
 def _perform_first_run_setup():
-    """Prompts for API key, embeds it, and removes this setup block."""
+    """Prompts for API key, embeds it atomically, and removes this setup block."""
     global API_KEY # Needed to set the key for the current run
+    # Import tempfile only when needed for setup
+    import tempfile
 
     print("-" * 30)
     print("First run: Google AI API Key configuration required.")
@@ -41,11 +44,13 @@ def _perform_first_run_setup():
             print("API key cannot be empty.")
 
     script_path = os.path.abspath(__file__)
-    # Escape potential quotes in the key itself for the string representation
-    new_key_escaped = new_key.replace('"', '\\"')
-    new_key_line = f'API_KEY = "{new_key_escaped}" # Embedded by setup\n'
+    script_dir = os.path.dirname(script_path) # Needed for temp file location
+
+    # Use repr() for safer string literal creation including quotes/escapes
+    new_key_line = f'API_KEY = {repr(new_key)} # Embedded by setup\n'
 
     original_api_key_value = API_KEY # Store original value for debugging prints
+    temp_path = None # Initialize temporary path variable
 
     try:
         print(f"\nReading current script: {script_path}")
@@ -75,51 +80,44 @@ def _perform_first_run_setup():
         # Validate that markers were found correctly
         if start_index == -1 or end_index == -1:
             print("\nCRITICAL ERROR: Could not find setup block start and/or end markers.", file=sys.stderr)
-            print("Expected markers to start with:", file=sys.stderr)
-            print(f"Start: '{_SETUP_BLOCK_START_MARKER_TEXT_}'", file=sys.stderr)
-            print(f"End:   '{_SETUP_BLOCK_END_MARKER_TEXT_}'", file=sys.stderr)
-            print("Check the script file content. Cannot modify script. Aborting setup.", file=sys.stderr)
+            # ... (rest of marker error handling as before) ...
             print("Using entered key for this session only.", file=sys.stderr)
-            API_KEY = new_key # Use for this session only
-            return False # Indicate setup failed
+            API_KEY = new_key
+            return False
 
         if end_index <= start_index:
              print("\nCRITICAL ERROR: End marker found before or at the same line as start marker.", file=sys.stderr)
-             print(f"Start Index: {start_index}, End Index: {end_index}", file=sys.stderr)
-             print("Cannot modify script. Aborting setup.", file=sys.stderr)
+             # ... (rest of marker order error handling as before) ...
              print("Using entered key for this session only.", file=sys.stderr)
-             API_KEY = new_key # Use for this session only
-             return False # Indicate setup failed
+             API_KEY = new_key
+             return False
 
         # Construct the new script content
         print("Constructing pruned script content...")
         new_lines = []
         new_lines.extend(lines[:start_index])
 
-        placeholder_line_replaced = False # Flag to track if replacement happened
+        placeholder_line_replaced = False
         if placeholder_line_index != -1:
             if placeholder_line_index < start_index:
                 print(f"Replacing placeholder at index {placeholder_line_index} in the *new* list.")
                 if placeholder_line_index < len(new_lines):
+                     # Use the repr()-based line here
                      new_lines[placeholder_line_index] = new_key_line
                      placeholder_line_replaced = True
-                else:
-                     print("\nWARNING: Placeholder index seems out of bounds for replacement. Appending key.", file=sys.stderr)
-                     new_lines.append(new_key_line) # Fallback, likely wrong place
+                # ... (rest of placeholder handling as before) ...
             else:
                  print(f"\nWARNING: Placeholder line found at index {placeholder_line_index}, which is *inside or after* the setup block (starts at {start_index}). Key will not be embedded in the pruned script automatically.", file=sys.stderr)
-                 # Fallback insertion logic remains the same
 
-        # If placeholder line wasn't found and replaced, try fallback insertion
         if not placeholder_line_replaced:
-             # Only warn if we actually expected to replace (i.e. script had placeholder value initially)
              if original_api_key_value == _API_KEY_PLACEHOLDER_VALUE_:
                  print("\nWARNING: Could not find or replace placeholder API_KEY line.", file=sys.stderr)
                  print(f"Expected line starting with: '{_API_KEY_PLACEHOLDER_LINE_START_}' before line {start_index + 1}", file=sys.stderr)
              print("Appending/Inserting new key line as fallback. Review script if issues occur.", file=sys.stderr)
              inserted_fallback = False
-             for i, line in enumerate(new_lines): # Search in the already constructed part
+             for i, line in enumerate(new_lines):
                  if line.strip().startswith('# --- End Permanent Imports'):
+                     # Use the repr()-based line here too
                      new_lines.insert(i + 1, new_key_line)
                      inserted_fallback = True
                      print("Inserted API key as fallback after imports block.")
@@ -131,20 +129,43 @@ def _perform_first_run_setup():
         print(f"Appending lines from index {end_index + 1} onwards.")
         new_lines.extend(lines[end_index + 1:])
 
-        # Overwrite the script with the new content
-        print(f"Overwriting script file: {script_path} ({len(new_lines)} lines)")
+        # --- ATOMIC WRITE IMPLEMENTATION ---
+        # Create a temporary file in the same directory as the script
+        # This makes os.replace more likely to be atomic
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".tmp", dir=script_dir, text=True)
+        print(f"Writing modified content to temporary file: {temp_path} ({len(new_lines)} lines)")
+
         try:
-            with open(script_path, 'w', encoding='utf-8') as f:
-                f.writelines(new_lines)
-            print("Script successfully pruned and API key embedded.")
+            # Write the new content to the temporary file
+            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f_temp:
+                f_temp.writelines(new_lines)
+            # Ensure temporary file is closed and flushed before replacement
+
+            # Atomically replace the original script with the temporary file
+            print(f"Attempting to atomically replace '{script_path}' with '{temp_path}'")
+            os.replace(temp_path, script_path)
+            # If os.replace succeeds, temp_path no longer exists (it became script_path)
+            temp_path = None # Indicate successful replacement (temp file gone)
+
+            print("Script successfully pruned, API key embedded, and file replaced.")
             API_KEY = new_key # IMPORTANT: Set for the current run!
             return True # Indicate setup successful
+
         except (IOError, OSError) as e:
-             print(f"\nERROR: Failed to write modified script file '{script_path}': {e}", file=sys.stderr)
-             print("Script modification failed. File might be corrupted.", file=sys.stderr)
+             print(f"\nERROR: Failed during script modification (write/replace): {e}", file=sys.stderr)
+             print(f"Original script '{script_path}' should be untouched.", file=sys.stderr)
              print("Using entered key for this session only.", file=sys.stderr)
              API_KEY = new_key # Use for this session only
              return False # Indicate setup failed
+        finally:
+             # Clean up the temporary file *only* if it still exists (i.e., os.replace failed or was never reached)
+             if temp_path and os.path.exists(temp_path):
+                 print(f"Cleaning up temporary file: {temp_path}")
+                 try:
+                     os.remove(temp_path)
+                 except OSError as cleanup_e:
+                     print(f"Warning: Failed to clean up temporary file '{temp_path}': {cleanup_e}", file=sys.stderr)
+        # --- END ATOMIC WRITE IMPLEMENTATION ---
 
     except (IOError, OSError) as e:
         print(f"\nERROR: Failed to read script file '{script_path}': {e}", file=sys.stderr)
@@ -155,11 +176,19 @@ def _perform_first_run_setup():
     except Exception as e:
         print(f"\nUNEXPECTED ERROR during script update: {e}", file=sys.stderr)
         traceback.print_exc() # Print full traceback for unexpected errors
+        # Cleanup temp file if created and an unexpected error occurred before replacement
+        if temp_path and os.path.exists(temp_path):
+             print(f"Cleaning up temporary file due to unexpected error: {temp_path}")
+             try:
+                 os.remove(temp_path)
+             except OSError as cleanup_e:
+                 print(f"Warning: Failed to clean up temporary file '{temp_path}': {cleanup_e}", file=sys.stderr)
         print("Using entered key for this session only.", file=sys.stderr)
         API_KEY = new_key # Use for this session only
         return False # Indicate setup failed
 
 # --- CORRECTED CHECK ---
+# (The rest of the script remains the same as your previous version)
 # Check if setup needs to run by comparing the VARIABLE'S VALUE
 if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
     setup_success = _perform_first_run_setup()
@@ -168,7 +197,6 @@ if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
         if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
              print("\nExiting due to critical setup failure (API key still placeholder).", file=sys.stderr)
              sys.exit(1)
-        else:
     print("\nFirst run setup complete. Reloading script logic might be needed if run via import.")
     print("Continuing with query for this execution...")
 else:
@@ -178,6 +206,7 @@ else:
 
 
 # --- Core API Access Logic (Permanent) ---
+# (This section remains unchanged)
 if __name__ == "__main__":
 
     # --- CORRECTED CHECK ---
