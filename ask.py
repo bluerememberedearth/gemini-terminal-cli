@@ -9,7 +9,7 @@ import traceback # For debugging unexpected errors
 # API Key will be permanently embedded here after first run.
 # DO NOT MANUALLY EDIT THIS LINE UNLESS RESETTING!
 API_KEY = "INITIAL_PLACEHOLDER" # This is the VALUE the variable holds initially
-MODEL_NAME = "gemini-1.5-flash" # Or your preferred model
+MODEL_NAME = "gemini-2.5-pro-exp-03-25" # Or your preferred model
 # --- End Permanent Imports & Initial Config ---
 
 
@@ -39,10 +39,6 @@ def _perform_first_run_setup():
         new_key = input("Enter your Google AI API Key: ").strip()
         if not new_key:
             print("API key cannot be empty.")
-
-    # --- ADDED DEBUG PRINT ---
-    print(f"DEBUG: Inside setup, got new_key = '{new_key}'")
-    # --- END DEBUG PRINT ---
 
     script_path = os.path.abspath(__file__)
     # Escape potential quotes in the key itself for the string representation
@@ -84,9 +80,7 @@ def _perform_first_run_setup():
             print(f"End:   '{_SETUP_BLOCK_END_MARKER_TEXT_}'", file=sys.stderr)
             print("Check the script file content. Cannot modify script. Aborting setup.", file=sys.stderr)
             print("Using entered key for this session only.", file=sys.stderr)
-            print(f"DEBUG: Marker failure, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
             API_KEY = new_key # Use for this session only
-            print(f"DEBUG: Marker failure, AFTER global assignment, API_KEY = '{API_KEY}'")
             return False # Indicate setup failed
 
         if end_index <= start_index:
@@ -94,9 +88,7 @@ def _perform_first_run_setup():
              print(f"Start Index: {start_index}, End Index: {end_index}", file=sys.stderr)
              print("Cannot modify script. Aborting setup.", file=sys.stderr)
              print("Using entered key for this session only.", file=sys.stderr)
-             print(f"DEBUG: Marker order failure, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
              API_KEY = new_key # Use for this session only
-             print(f"DEBUG: Marker order failure, AFTER global assignment, API_KEY = '{API_KEY}'")
              return False # Indicate setup failed
 
         # Construct the new script content
@@ -145,65 +137,49 @@ def _perform_first_run_setup():
             with open(script_path, 'w', encoding='utf-8') as f:
                 f.writelines(new_lines)
             print("Script successfully pruned and API key embedded.")
-            print(f"DEBUG: Successful write, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
             API_KEY = new_key # IMPORTANT: Set for the current run!
-            print(f"DEBUG: Successful write, AFTER global assignment, API_KEY = '{API_KEY}'")
             return True # Indicate setup successful
         except (IOError, OSError) as e:
              print(f"\nERROR: Failed to write modified script file '{script_path}': {e}", file=sys.stderr)
              print("Script modification failed. File might be corrupted.", file=sys.stderr)
              print("Using entered key for this session only.", file=sys.stderr)
-             print(f"DEBUG: Write failure, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
              API_KEY = new_key # Use for this session only
-             print(f"DEBUG: Write failure, AFTER global assignment, API_KEY = '{API_KEY}'")
              return False # Indicate setup failed
 
     except (IOError, OSError) as e:
         print(f"\nERROR: Failed to read script file '{script_path}': {e}", file=sys.stderr)
         print("Check file permissions. Script modification failed.", file=sys.stderr)
         print("Using entered key for this session only.", file=sys.stderr)
-        print(f"DEBUG: Read failure EXCEPTION, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
         API_KEY = new_key # Use for this session only
-        print(f"DEBUG: Read failure EXCEPTION, AFTER global assignment, API_KEY = '{API_KEY}'")
         return False # Indicate setup failed
     except Exception as e:
         print(f"\nUNEXPECTED ERROR during script update: {e}", file=sys.stderr)
         traceback.print_exc() # Print full traceback for unexpected errors
         print("Using entered key for this session only.", file=sys.stderr)
-        print(f"DEBUG: UNEXPECTED EXCEPTION, BEFORE global assignment, API_KEY = '{original_api_key_value}'")
         API_KEY = new_key # Use for this session only
-        print(f"DEBUG: UNEXPECTED EXCEPTION, AFTER global assignment, API_KEY = '{API_KEY}'")
         return False # Indicate setup failed
 
 # --- CORRECTED CHECK ---
 # Check if setup needs to run by comparing the VARIABLE'S VALUE
-print(f"DEBUG: Before setup check, API_KEY = '{API_KEY}'")
 if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
-    print("DEBUG: Running setup...")
     setup_success = _perform_first_run_setup()
-    print(f"DEBUG: Setup function returned: {setup_success}")
-    print(f"DEBUG: Immediately after setup call, API_KEY = '{API_KEY}'") # Crucial check
     if not setup_success:
         # If setup failed critically check the CURRENT VALUE of API_KEY
         if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
              print("\nExiting due to critical setup failure (API key still placeholder).", file=sys.stderr)
              sys.exit(1)
         else:
-             print("\nDEBUG: Setup failed, but API key seems set for this session. Continuing...")
     print("\nFirst run setup complete. Reloading script logic might be needed if run via import.")
     print("Continuing with query for this execution...")
 else:
-    print("DEBUG: Setup not required.")
 # --- END CORRECTED CHECK ---
 
 # --- END SELF-MODIFY/SETUP BLOCK (This marker and the block above are removed) ---
 
-print(f"DEBUG: Before __main__ block, API_KEY = '{API_KEY}'")
 
 # --- Core API Access Logic (Permanent) ---
 if __name__ == "__main__":
 
-    print(f"DEBUG: Inside __main__, checking API_KEY = '{API_KEY}'")
     # --- CORRECTED CHECK ---
     # Ensure API key is set (should be by now, either embedded or for this session)
     # Just check if it's empty or still the placeholder VALUE
