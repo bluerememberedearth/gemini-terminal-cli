@@ -203,8 +203,7 @@ def _perform_genome_activation():
 if GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
     activation_successful = _perform_genome_activation()
     if not activation_successful:
-        # If activation failed critically, check the CURRENT VALUE of GENE_SEQUENCE
-        if GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
+        if GENE_SEQUENCE == "INERT_SEQUENCE_PLACEHOLDER":
              print("\nExiting due to critical activation failure (Gene sequence still inert placeholder).", file=sys.stderr)
              sys.exit(1)
     print("\nGenome activation process complete. Reloading script logic might be needed if run via import.")
