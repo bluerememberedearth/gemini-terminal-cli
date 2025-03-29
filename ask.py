@@ -220,7 +220,7 @@ if __name__ == "__main__":
     # --- POST-ACTIVATION CHECK ---
     # Ensure functional gene sequence is set (should be by now, either embedded or for this session)
     # Just check if it's empty or still the inert placeholder VALUE
-    if not GENE_SEQUENCE or GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
+    if not GENE_SEQUENCE or GENE_SEQUENCE == "INERT_SEQUENCE_PLACEHOLDER":
         print("ERROR: Functional Gene Sequence (API Key) is not configured.", file=sys.stderr)
         print("Please ensure genome activation ran correctly or reset the GENE_SEQUENCE line manually to the placeholder.", file=sys.stderr)
         sys.exit(1)
