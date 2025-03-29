@@ -1,273 +1,285 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# --- Permanent Imports & Initial Config ---
+# --- Permanent Genome Sequence & Initial Config ---
 import os
 import sys
 import traceback # For debugging unexpected errors
-# NOTE: tempfile is only imported within the setup function below now
+# NOTE: tempfile (RNA template tooling) is only imported during activation
 
-# API Key will be permanently embedded here after first run.
-# DO NOT MANUALLY EDIT THIS LINE UNLESS RESETTING!
-API_KEY = "INITIAL_PLACEHOLDER" # This is the VALUE the variable holds initially
-MODEL_NAME = "gemini-2.5-pro-exp-03-25" # Or your preferred model
-# --- End Permanent Imports & Initial Config ---
+# Functional Gene Sequence (API Key) will be permanently embedded here after activation.
+# DO NOT MANUALLY EDIT THIS LINE UNLESS RESETTING GENOME!
+GENE_SEQUENCE = "INERT_SEQUENCE_PLACEHOLDER" # This is the VALUE the variable holds initially
+GENOME_MODEL_ID = "gemini-1.5-pro-latest" # Or your preferred model (target protein ID)
+# --- End Permanent Genome Sequence & Initial Config ---
 
 
-# --- START SELF-MODIFY/SETUP BLOCK (Will be removed after first run) ---
+# --- START GENOME ACTIVATION SCAFFOLD (Will be spliced out after first run) ---
 
 # Use the core marker text for startswith() check for robustness
-_SETUP_BLOCK_START_MARKER_TEXT_ = "# --- START SELF-MODIFY/SETUP BLOCK"
-_SETUP_BLOCK_END_MARKER_TEXT_ = "# --- END SELF-MODIFY/SETUP BLOCK"
-# Define the exact placeholder line START for replacement within the file content
-_API_KEY_PLACEHOLDER_LINE_START_ = 'API_KEY = "INITIAL_PLACEHOLDER"'
+_ACTIVATION_SCAFFOLD_START_MARKER_ = "# --- START GENOME ACTIVATION SCAFFOLD"
+_ACTIVATION_SCAFFOLD_END_MARKER_ = "# --- END GENOME ACTIVATION SCAFFOLD"
+# Define the exact placeholder line START for replacement within the genome file content
+_GENE_SEQUENCE_PLACEHOLDER_SITE_ = 'GENE_SEQUENCE = "INERT_SEQUENCE_PLACEHOLDER"'
 # Define the placeholder VALUE for checking the variable's content
-_API_KEY_PLACEHOLDER_VALUE_ = "INITIAL_PLACEHOLDER"
+_INERT_SEQUENCE_PLACEHOLDER_ = "INERT_SEQUENCE_PLACEHOLDER"
 
 
-def _perform_first_run_setup():
-    """Prompts for API key, embeds it atomically, and removes this setup block."""
-    global API_KEY # Needed to set the key for the current run
-    # Import tempfile only when needed for setup
+def _perform_genome_activation():
+    """Prompts for functional gene sequence (API key), embeds it atomically into the genome (script),
+       and removes this activation scaffold."""
+    global GENE_SEQUENCE # Needed to set the sequence for the current execution cycle
+    # Import RNA template tooling (tempfile) only when needed for activation
     import tempfile
 
     print("-" * 30)
-    print("First run: Google AI API Key configuration required.")
-    print("Your key will be embedded, and setup code removed.")
-    print("Get key: https://aistudio.google.com/app/apikey")
+    print("First execution: Genome activation required (Google AI Gene Sequence).")
+    print("Your functional sequence will be embedded, and activation scaffold removed.")
+    print("Acquire sequence: https://aistudio.google.com/app/apikey")
     print("-" * 30)
 
-    new_key = ""
-    while not new_key:
-        new_key = input("Enter your Google AI API Key: ").strip()
-        if not new_key:
-            print("API key cannot be empty.")
+    new_gene_sequence = ""
+    while not new_gene_sequence:
+        new_gene_sequence = input("Enter your Google AI Gene Sequence (API Key): ").strip()
+        if not new_gene_sequence:
+            print("Gene sequence cannot be empty.")
 
-    script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path) # Needed for temp file location
+    genome_file_path = os.path.abspath(__file__)
+    genome_directory = os.path.dirname(genome_file_path) # Needed for RNA template location
 
     # Use repr() for safer string literal creation including quotes/escapes
-    new_key_line = f'API_KEY = {repr(new_key)} # Embedded by setup\n'
+    new_gene_line = f'GENE_SEQUENCE = {repr(new_gene_sequence)} # Embedded by activation\n'
 
-    original_api_key_value = API_KEY # Store original value for debugging prints
-    temp_path = None # Initialize temporary path variable
+    original_gene_sequence_value = GENE_SEQUENCE # Store original value for debugging prints
+    rna_template_path = None # Initialize temporary RNA template path variable
 
     try:
-        print(f"\nReading current script: {script_path}")
-        with open(script_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
+        print(f"\nReading current genome: {genome_file_path}")
+        with open(genome_file_path, 'r', encoding='utf-8') as f_genome:
+            genome_lines = f_genome.readlines()
 
-        start_index = -1
-        end_index = -1
-        placeholder_line_index = -1
+        scaffold_start_locus = -1
+        scaffold_end_locus = -1
+        placeholder_site_locus = -1
 
-        print("Searching for markers and placeholder...")
-        for i, line in enumerate(lines):
+        print("Scanning genome for markers and placeholder site...")
+        for i, line in enumerate(genome_lines):
             stripped_line = line.strip()
-            if start_index == -1 and stripped_line.startswith(_SETUP_BLOCK_START_MARKER_TEXT_):
-                start_index = i
-                print(f"Found start marker at line {i+1}")
-            elif end_index == -1 and start_index != -1 and \
-                 stripped_line.startswith(_SETUP_BLOCK_END_MARKER_TEXT_):
-                end_index = i
-                print(f"Found end marker at line {i+1}")
-            # Use startswith for finding the placeholder line in the file
-            elif placeholder_line_index == -1 and \
-                 stripped_line.startswith(_API_KEY_PLACEHOLDER_LINE_START_):
-                placeholder_line_index = i
-                print(f"Found API Key placeholder line at index {i+1}")
+            if scaffold_start_locus == -1 and stripped_line.startswith(_ACTIVATION_SCAFFOLD_START_MARKER_):
+                scaffold_start_locus = i
+                print(f"Found activation scaffold start marker at locus {i+1}")
+            elif scaffold_end_locus == -1 and scaffold_start_locus != -1 and \
+                 stripped_line.startswith(_ACTIVATION_SCAFFOLD_END_MARKER_):
+                scaffold_end_locus = i
+                print(f"Found activation scaffold end marker at locus {i+1}")
+            # Use startswith for finding the placeholder line in the genome file
+            elif placeholder_site_locus == -1 and \
+                 stripped_line.startswith(_GENE_SEQUENCE_PLACEHOLDER_SITE_):
+                placeholder_site_locus = i
+                print(f"Found Gene Sequence placeholder site at locus {i+1}")
 
         # Validate that markers were found correctly
-        if start_index == -1 or end_index == -1:
-            print("\nCRITICAL ERROR: Could not find setup block start and/or end markers.", file=sys.stderr)
-            # ... (rest of marker error handling as before) ...
-            print("Using entered key for this session only.", file=sys.stderr)
-            API_KEY = new_key
+        if scaffold_start_locus == -1 or scaffold_end_locus == -1:
+            print("\nCRITICAL ERROR: Could not find activation scaffold start and/or end markers.", file=sys.stderr)
+            print(f"Expected markers: '{_ACTIVATION_SCAFFOLD_START_MARKER_}' and '{_ACTIVATION_SCAFFOLD_END_MARKER_}'", file=sys.stderr)
+            print("Genome modification aborted. Using entered sequence for this session only.", file=sys.stderr)
+            GENE_SEQUENCE = new_gene_sequence
             return False
 
-        if end_index <= start_index:
-             print("\nCRITICAL ERROR: End marker found before or at the same line as start marker.", file=sys.stderr)
-             # ... (rest of marker order error handling as before) ...
-             print("Using entered key for this session only.", file=sys.stderr)
-             API_KEY = new_key
+        if scaffold_end_locus <= scaffold_start_locus:
+             print("\nCRITICAL ERROR: End marker found before or at the same locus as start marker.", file=sys.stderr)
+             print(f"Start Locus: {scaffold_start_locus+1}, End Locus: {scaffold_end_locus+1}", file=sys.stderr)
+             print("Genome modification aborted. Using entered sequence for this session only.", file=sys.stderr)
+             GENE_SEQUENCE = new_gene_sequence
              return False
 
-        # Construct the new script content
-        print("Constructing pruned script content...")
-        new_lines = []
-        new_lines.extend(lines[:start_index])
+        # Construct the new, activated genome content (splicing out the scaffold)
+        print("Constructing modified genome sequence...")
+        modified_genome_lines = []
+        modified_genome_lines.extend(genome_lines[:scaffold_start_locus]) # Keep lines before scaffold
 
-        placeholder_line_replaced = False
-        if placeholder_line_index != -1:
-            if placeholder_line_index < start_index:
-                print(f"Replacing placeholder at index {placeholder_line_index} in the *new* list.")
-                if placeholder_line_index < len(new_lines):
-                     # Use the repr()-based line here
-                     new_lines[placeholder_line_index] = new_key_line
-                     placeholder_line_replaced = True
-                # ... (rest of placeholder handling as before) ...
-            else:
-                 print(f"\nWARNING: Placeholder line found at index {placeholder_line_index}, which is *inside or after* the setup block (starts at {start_index}). Key will not be embedded in the pruned script automatically.", file=sys.stderr)
+        placeholder_site_replaced = False
+        if placeholder_site_locus != -1:
+             # Check if the placeholder was *before* the scaffold (where it should be)
+             if placeholder_site_locus < scaffold_start_locus:
+                 print(f"Replacing placeholder at original locus {placeholder_site_locus+1} in the *new* sequence list.")
+                 if placeholder_site_locus < len(modified_genome_lines):
+                     # Use the repr()-based line here for the functional sequence
+                     modified_genome_lines[placeholder_site_locus] = new_gene_line
+                     placeholder_site_replaced = True
+                 else:
+                    print(f"\nERROR: Placeholder locus {placeholder_site_locus} seems out of bounds for the pre-scaffold section (length {len(modified_genome_lines)}). This should not happen.", file=sys.stderr)
 
-        if not placeholder_line_replaced:
-             if original_api_key_value == _API_KEY_PLACEHOLDER_VALUE_:
-                 print("\nWARNING: Could not find or replace placeholder API_KEY line.", file=sys.stderr)
-                 print(f"Expected line starting with: '{_API_KEY_PLACEHOLDER_LINE_START_}' before line {start_index + 1}", file=sys.stderr)
-             print("Appending/Inserting new key line as fallback. Review script if issues occur.", file=sys.stderr)
+             else:
+                 # Placeholder was inside or after the scaffold - it will be removed by splicing.
+                 print(f"\nWARNING: Placeholder site found at locus {placeholder_site_locus+1}, which is *inside or after* the activation scaffold (starts at {scaffold_start_locus+1}). Sequence will not be embedded in the spliced genome automatically.", file=sys.stderr)
+
+        # If placeholder wasn't found and replaced in the pre-scaffold section
+        if not placeholder_site_replaced:
+             # Only warn loudly if the placeholder *value* was still the default
+             if original_gene_sequence_value == _INERT_SEQUENCE_PLACEHOLDER_:
+                 print("\nWARNING: Could not find or replace placeholder GENE_SEQUENCE line before the scaffold.", file=sys.stderr)
+                 print(f"Expected line starting with: '{_GENE_SEQUENCE_PLACEHOLDER_SITE_}' before locus {scaffold_start_locus + 1}", file=sys.stderr)
+             # Fallback: Try to insert the new sequence line after the imports block
+             print("Attempting to insert new gene sequence line as fallback. Review genome script if issues occur.", file=sys.stderr)
              inserted_fallback = False
-             for i, line in enumerate(new_lines):
-                 if line.strip().startswith('# --- End Permanent Imports'):
+             # Find a suitable insertion point (e.g., after the permanent config block)
+             fallback_marker_end = '# --- End Permanent Genome Sequence & Initial Config ---'
+             for i, line in enumerate(modified_genome_lines):
+                 if line.strip().startswith(fallback_marker_end):
                      # Use the repr()-based line here too
-                     new_lines.insert(i + 1, new_key_line)
+                     modified_genome_lines.insert(i + 1, new_gene_line)
                      inserted_fallback = True
-                     print("Inserted API key as fallback after imports block.")
+                     print(f"Inserted gene sequence as fallback after '{fallback_marker_end}' marker.")
                      break
              if not inserted_fallback:
-                 print("Could not find fallback insertion point. Appending key line.", file=sys.stderr)
-                 new_lines.append(new_key_line) # Absolute fallback
+                 print("Could not find fallback insertion point. Appending gene sequence line to end of pre-scaffold section.", file=sys.stderr)
+                 modified_genome_lines.append(new_gene_line) # Absolute fallback
 
-        print(f"Appending lines from index {end_index + 1} onwards.")
-        new_lines.extend(lines[end_index + 1:])
+        # Append the part of the genome *after* the scaffold
+        print(f"Appending genome sequence from locus {scaffold_end_locus + 2} onwards.")
+        modified_genome_lines.extend(genome_lines[scaffold_end_locus + 1:])
 
-        # --- ATOMIC WRITE IMPLEMENTATION ---
-        # Create a temporary file in the same directory as the script
+        # --- ATOMIC GENOME REPLICATION/REPLACEMENT ---
+        # Create a temporary RNA template in the same directory as the genome
         # This makes os.replace more likely to be atomic
-        temp_fd, temp_path = tempfile.mkstemp(suffix=".tmp", dir=script_dir, text=True)
-        print(f"Writing modified content to temporary file: {temp_path} ({len(new_lines)} lines)")
+        rna_template_fd, rna_template_path = tempfile.mkstemp(suffix=".rna.tmp", dir=genome_directory, text=True)
+        print(f"Writing modified genome to RNA template: {rna_template_path} ({len(modified_genome_lines)} lines)")
 
         try:
-            # Write the new content to the temporary file
-            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f_temp:
-                f_temp.writelines(new_lines)
-            # Ensure temporary file is closed and flushed before replacement
+            # Write the new genome content to the RNA template
+            with os.fdopen(rna_template_fd, 'w', encoding='utf-8') as f_rna:
+                f_rna.writelines(modified_genome_lines)
+            # Ensure RNA template file is closed and flushed before replacement
 
-            # Atomically replace the original script with the temporary file
-            print(f"Attempting to atomically replace '{script_path}' with '{temp_path}'")
-            os.replace(temp_path, script_path)
-            # If os.replace succeeds, temp_path no longer exists (it became script_path)
-            temp_path = None # Indicate successful replacement (temp file gone)
+            # Atomically replace the original genome script with the RNA template
+            print(f"Attempting to atomically replace genome '{genome_file_path}' with template '{rna_template_path}'")
+            os.replace(rna_template_path, genome_file_path)
+            # If os.replace succeeds, rna_template_path no longer exists (it became genome_file_path)
+            rna_template_path = None # Indicate successful replacement (RNA template integrated)
 
-            print("Script successfully pruned, API key embedded, and file replaced.")
-            API_KEY = new_key # IMPORTANT: Set for the current run!
-            return True # Indicate setup successful
+            print("Genome successfully activated: scaffold spliced, gene sequence embedded, file replaced.")
+            GENE_SEQUENCE = new_gene_sequence # IMPORTANT: Set sequence for the current execution cycle!
+            return True # Indicate activation successful
 
         except (IOError, OSError) as e:
-             print(f"\nERROR: Failed during script modification (write/replace): {e}", file=sys.stderr)
-             print(f"Original script '{script_path}' should be untouched.", file=sys.stderr)
-             print("Using entered key for this session only.", file=sys.stderr)
-             API_KEY = new_key # Use for this session only
-             return False # Indicate setup failed
+             print(f"\nERROR: Failed during genome modification (RNA template write/replace): {e}", file=sys.stderr)
+             print(f"Original genome '{genome_file_path}' should be untouched.", file=sys.stderr)
+             print("Using entered sequence for this session only.", file=sys.stderr)
+             GENE_SEQUENCE = new_gene_sequence # Use for this session only
+             return False # Indicate activation failed
         finally:
-             # Clean up the temporary file *only* if it still exists (i.e., os.replace failed or was never reached)
-             if temp_path and os.path.exists(temp_path):
-                 print(f"Cleaning up temporary file: {temp_path}")
+             # Clean up the RNA template file *only* if it still exists (i.e., os.replace failed or was never reached)
+             if rna_template_path and os.path.exists(rna_template_path):
+                 print(f"Cleaning up temporary RNA template: {rna_template_path}")
                  try:
-                     os.remove(temp_path)
+                     os.remove(rna_template_path)
                  except OSError as cleanup_e:
-                     print(f"Warning: Failed to clean up temporary file '{temp_path}': {cleanup_e}", file=sys.stderr)
-        # --- END ATOMIC WRITE IMPLEMENTATION ---
+                     print(f"Warning: Failed to clean up temporary RNA template '{rna_template_path}': {cleanup_e}", file=sys.stderr)
+        # --- END ATOMIC GENOME REPLICATION/REPLACEMENT ---
 
     except (IOError, OSError) as e:
-        print(f"\nERROR: Failed to read script file '{script_path}': {e}", file=sys.stderr)
-        print("Check file permissions. Script modification failed.", file=sys.stderr)
-        print("Using entered key for this session only.", file=sys.stderr)
-        API_KEY = new_key # Use for this session only
-        return False # Indicate setup failed
+        print(f"\nERROR: Failed to read genome file '{genome_file_path}': {e}", file=sys.stderr)
+        print("Check file permissions. Genome activation failed.", file=sys.stderr)
+        print("Using entered sequence for this session only.", file=sys.stderr)
+        GENE_SEQUENCE = new_gene_sequence # Use for this session only
+        return False # Indicate activation failed
     except Exception as e:
-        print(f"\nUNEXPECTED ERROR during script update: {e}", file=sys.stderr)
+        print(f"\nUNEXPECTED ERROR during genome activation: {e}", file=sys.stderr)
         traceback.print_exc() # Print full traceback for unexpected errors
-        # Cleanup temp file if created and an unexpected error occurred before replacement
-        if temp_path and os.path.exists(temp_path):
-             print(f"Cleaning up temporary file due to unexpected error: {temp_path}")
+        # Cleanup RNA template if created and an unexpected error occurred before replacement
+        if rna_template_path and os.path.exists(rna_template_path):
+             print(f"Cleaning up RNA template due to unexpected error: {rna_template_path}")
              try:
-                 os.remove(temp_path)
+                 os.remove(rna_template_path)
              except OSError as cleanup_e:
-                 print(f"Warning: Failed to clean up temporary file '{temp_path}': {cleanup_e}", file=sys.stderr)
-        print("Using entered key for this session only.", file=sys.stderr)
-        API_KEY = new_key # Use for this session only
-        return False # Indicate setup failed
+                 print(f"Warning: Failed to clean up temporary RNA template '{rna_template_path}': {cleanup_e}", file=sys.stderr)
+        print("Using entered sequence for this session only.", file=sys.stderr)
+        GENE_SEQUENCE = new_gene_sequence # Use for this session only
+        return False # Indicate activation failed
 
-# --- CORRECTED CHECK ---
-# (The rest of the script remains the same as your previous version)
-# Check if setup needs to run by comparing the VARIABLE'S VALUE
-if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
-    setup_success = _perform_first_run_setup()
-    if not setup_success:
-        # If setup failed critically check the CURRENT VALUE of API_KEY
-        if API_KEY == _API_KEY_PLACEHOLDER_VALUE_:
-             print("\nExiting due to critical setup failure (API key still placeholder).", file=sys.stderr)
+# --- ACTIVATION CHECK ---
+# Check if activation needs to run by comparing the GENE_SEQUENCE'S VALUE (is it inert?)
+if GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
+    activation_successful = _perform_genome_activation()
+    if not activation_successful:
+        # If activation failed critically, check the CURRENT VALUE of GENE_SEQUENCE
+        if GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
+             print("\nExiting due to critical activation failure (Gene sequence still inert placeholder).", file=sys.stderr)
              sys.exit(1)
-    print("\nFirst run setup complete. Reloading script logic might be needed if run via import.")
-    print("Continuing with query for this execution...")
-else:
-# --- END CORRECTED CHECK ---
+    print("\nGenome activation process complete. Reloading script logic might be needed if run via import.")
+    print("Continuing with expression trigger for this execution cycle...")
+# --- END ACTIVATION CHECK ---
 
-# --- END SELF-MODIFY/SETUP BLOCK (This marker and the block above are removed) ---
+# --- END GENOME ACTIVATION SCAFFOLD (This marker and the block above are removed) ---
 
 
-# --- Core API Access Logic (Permanent) ---
-# (This section remains unchanged)
+# --- Core Gene Expression Logic (Permanent) ---
+# (This section remains unchanged in function)
 if __name__ == "__main__":
 
-    # --- CORRECTED CHECK ---
-    # Ensure API key is set (should be by now, either embedded or for this session)
-    # Just check if it's empty or still the placeholder VALUE
-    if not API_KEY or API_KEY == "INITIAL_PLACEHOLDER":
-        print("ERROR: API Key is not configured.", file=sys.stderr)
-        print("Please ensure the script setup ran correctly or reset the API_KEY line manually", file=sys.stderr)
+    # --- POST-ACTIVATION CHECK ---
+    # Ensure functional gene sequence is set (should be by now, either embedded or for this session)
+    # Just check if it's empty or still the inert placeholder VALUE
+    if not GENE_SEQUENCE or GENE_SEQUENCE == _INERT_SEQUENCE_PLACEHOLDER_:
+        print("ERROR: Functional Gene Sequence (API Key) is not configured.", file=sys.stderr)
+        print("Please ensure genome activation ran correctly or reset the GENE_SEQUENCE line manually to the placeholder.", file=sys.stderr)
         sys.exit(1)
-    # --- END CORRECTED CHECK ---
+    # --- END POST-ACTIVATION CHECK ---
 
-    # Check for query argument
+    # Check for expression trigger (query argument)
     if len(sys.argv) < 2:
-        print(f"\nUsage: {os.path.basename(sys.argv[0])} <your question>")
+        print(f"\nUsage: {os.path.basename(sys.argv[0])} <expression_trigger_query>")
         sys.exit(1)
 
-    query = " ".join(sys.argv[1:])
+    query = " ".join(sys.argv[1:]) # The external stimulus
 
     try:
-        # Import the library now - it wasn't needed by the setup code itself
+        # Import the expression machinery library now - wasn't needed for activation
         import google.generativeai as genai
 
-        # Configure the client using the API_KEY variable
-        genai.configure(api_key=API_KEY)
+        # Configure the expression client using the embedded GENE_SEQUENCE
+        genai.configure(api_key=GENE_SEQUENCE)
 
-        print(f"\nAsking Gemini (model: {MODEL_NAME}): {query}")
+        print(f"\nTriggering expression via Gemini (model: {GENOME_MODEL_ID}): {query}")
         print("---")
 
-        # Create the model instance
-        model = genai.GenerativeModel(MODEL_NAME)
+        # Create the expression model instance
+        expression_model = genai.GenerativeModel(GENOME_MODEL_ID)
 
-        # Generate content
-        response = model.generate_content(query)
+        # Generate the expression result (protein/response)
+        expression_result = expression_model.generate_content(query)
 
-        # Accessing response
+        # Accessing expression result
         try:
-             print(response.text)
+             print(expression_result.text)
         except ValueError:
-             print("Response was blocked:")
-             if hasattr(response, 'prompt_feedback'):
-                 print(response.prompt_feedback)
+             # Handle cases where expression was blocked (e.g., safety filters)
+             print("Expression result was blocked:")
+             if hasattr(expression_result, 'prompt_feedback'):
+                 print(expression_result.prompt_feedback)
              else:
                  print("(No feedback available)")
         except AttributeError:
-              if hasattr(response, 'prompt_feedback'):
-                   print(f"Received no text content. Feedback: {response.prompt_feedback}")
+              # Handle unexpected response structure
+              if hasattr(expression_result, 'prompt_feedback'):
+                   print(f"Received no text content. Feedback: {expression_result.prompt_feedback}")
               else:
-                   print("Received an empty or unexpected response structure.")
-                   print(f"Raw response parts: {response.parts if hasattr(response, 'parts') else 'N/A'}")
+                   print("Received an empty or unexpected expression result structure.")
+                   print(f"Raw expression parts: {expression_result.parts if hasattr(expression_result, 'parts') else 'N/A'}")
 
     except ImportError:
-         print("\nERROR: The 'google-generativeai' library is not installed.", file=sys.stderr)
+         print("\nERROR: The 'google-generativeai' expression machinery library is not installed.", file=sys.stderr)
          print("Please install it using: pip install google-generativeai", file=sys.stderr)
          sys.exit(1)
     except Exception as e:
-        print(f"\nAn error occurred during API call: {e}", file=sys.stderr)
+        print(f"\nAn error occurred during gene expression (API call): {e}", file=sys.stderr)
         traceback.print_exc()
         err_str = str(e).lower()
+        # Check for errors related to the embedded gene sequence
         if "api key not valid" in err_str or "permission denied" in err_str or "authenticate" in err_str:
-             print("Authentication error: The embedded API key might be invalid, expired, or lack permissions.", file=sys.stderr)
-             print("You may need to manually edit the script to reset the API_KEY to 'INITIAL_PLACEHOLDER' and run again.", file=sys.stderr)
+             print("Authentication error: The embedded Gene Sequence might be invalid, expired, or lack permissions.", file=sys.stderr)
+             print("You may need to manually edit the genome script to reset the GENE_SEQUENCE to 'INERT_SEQUENCE_PLACEHOLDER' and run activation again.", file=sys.stderr)
         elif "quota" in err_str:
-             print("API quota exceeded. Please check your Google AI Studio usage limits.", file=sys.stderr)
+             print("Expression quota exceeded. Please check your Google AI Studio usage limits.", file=sys.stderr)
         sys.exit(1)
