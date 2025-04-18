@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
             try:
                 print(segment.text, end="", flush=True)
-                accumulated_text += segment.text
+                accumulated_segments += segment.text
             except ValueError:
                 print("[Blocked segment or No fragment]", end="", flush=True)
             except Exception as e:
