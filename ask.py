@@ -236,6 +236,7 @@ if __name__ == "__main__":
 
     try:
         # Import the expression machinery library now - wasn't needed for activation
+        import google.api_core as api_core_exceptions
         import google.generativeai as genai
 
         # Configure the expression client using the embedded GENE_SEQUENCE
@@ -290,8 +291,8 @@ if __name__ == "__main__":
     except api_core_exceptions.DeadlineExceeded as e:
         end_time = time.time()
         print(f"\nERROR: Request timed out after {end_time - start_time:.2f} seconds (limit: 60s).", file=sys.stderr)
-        if not first_chunk_received:
-            print("   Timeout likely occurred before receiving the first chunk (network/initialization issue?).", file=sys.stderr)
+        if not first_segment_received:
+            print("   Timeout occurred before receiving the first chunk (network/initialization issue?).", file=sys.stderr)
         else:
             print("   Timeout occurred mid-stream.", file=sys.stderr)
         print(f"   Original exception: {e}", file=sys.stderr)
