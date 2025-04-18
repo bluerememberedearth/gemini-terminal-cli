@@ -4,6 +4,7 @@
 # --- Permanent Genome Sequence & Initial Config ---
 import os
 import sys
+import time
 import traceback # For debugging unexpected errors
 # NOTE: tempfile (RNA template tooling) is only imported during activation
 
@@ -246,31 +247,55 @@ if __name__ == "__main__":
         # Create the expression model instance
         expression_model = genai.GenerativeModel(GENOME_MODEL_ID)
 
+        first_segment_received = False
+        start_time = time.time()
+        accumulated_segments = ""
+        
         # Generate the expression result (protein/response)
-        expression_result = expression_model.generate_content(query)
+        expression_stream = expression_model.generate_content(
+            query,
+            stream=True, 
+            request_options={'timeout': 60}
+        )
 
-        # Accessing expression result
+        for segment in expression_stream:
+            if not first_segment_received:
+                first_segment_time = time.time()
+                print(f"First segment received in {first_segment_time - start_time:.2f} seconds.")
+                print("Receiving stream: ", end="", flush=True)
+            first_segment_received = True
+
+            try:
+                print(segment.text, end="", flush=True)
+                accumulated_text += segment.text
+            except ValueError:
+                print("[Blocked segment or No fragment]", end="", flush=True)
+            except Exception as e:
+                print(f"\n[Error processing segment: {e}]", end="", flush=True)
+
+        print("\n--- Stream Finished ---")
+        stream_finished_without_error = True
+        end_time = time.time()
+        print(f"Stream finished in {end_time - start_time:.2f} seconds.")
+        
         try:
-             print(expression_result.text)
-        except ValueError:
-             # Handle cases where expression was blocked (e.g., safety filters)
-             print("Expression result was blocked:")
-             if hasattr(expression_result, 'prompt_feedback'):
-                 print(expression_result.prompt_feedback)
-             else:
-                 print("(No feedback available)")
-        except AttributeError:
-              # Handle unexpected response structure
-              if hasattr(expression_result, 'prompt_feedback'):
-                   print(f"Received no text content. Feedback: {expression_result.prompt_feedback}")
-              else:
-                   print("Received an empty or unexpected expression result structure.")
-                   print(f"Raw expression parts: {expression_result.parts if hasattr(expression_result, 'parts') else 'N/A'}")
-
+            final_prompt_feedback = expression_stream.prompt_feedback
+        except Exception:
+            print("Could not retrieve final prompt feedback from the stream.")
+    
     except ImportError:
          print("\nERROR: The 'google-generativeai' expression machinery library is not installed.", file=sys.stderr)
          print("Please install it using: pip install google-generativeai", file=sys.stderr)
          sys.exit(1)
+    except api_core_exceptions.DeadlineExceeded as e:
+        end_time = time.time()
+        print(f"\nERROR: Request timed out after {end_time - start_time:.2f} seconds (limit: 60s).", file=sys.stderr)
+        if not first_chunk_received:
+            print("   Timeout likely occurred before receiving the first chunk (network/initialization issue?).", file=sys.stderr)
+        else:
+            print("   Timeout occurred mid-stream.", file=sys.stderr)
+        print(f"   Original exception: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"\nAn error occurred during gene expression (API call): {e}", file=sys.stderr)
         traceback.print_exc()
