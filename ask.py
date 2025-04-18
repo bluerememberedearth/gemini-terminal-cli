@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
     try:
         # Import the expression machinery library now - wasn't needed for activation
-        import google.api_core as api_core_exceptions
+        from google.api_core import exceptions
         import google.generativeai as genai
 
         # Configure the expression client using the embedded GENE_SEQUENCE
@@ -288,7 +288,7 @@ if __name__ == "__main__":
          print("\nERROR: The 'google-generativeai' expression machinery library is not installed.", file=sys.stderr)
          print("Please install it using: pip install google-generativeai", file=sys.stderr)
          sys.exit(1)
-    except api_core_exceptions.DeadlineExceeded as e:
+    except exceptions.DeadlineExceeded as e:
         end_time = time.time()
         print(f"\nERROR: Request timed out after {end_time - start_time:.2f} seconds (limit: 60s).", file=sys.stderr)
         if not first_segment_received:
