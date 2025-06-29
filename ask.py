@@ -11,6 +11,7 @@ import traceback # For debugging unexpected errors
 # Functional Gene Sequence (API Key) will be permanently embedded here after activation.
 # DO NOT MANUALLY EDIT THIS LINE UNLESS RESETTING GENOME!
 GENE_SEQUENCE = "INERT_SEQUENCE_PLACEHOLDER" # This is the VALUE the variable holds initially
+#TODO - how to make it so requested model is always the latest available?
 GENOME_MODEL_ID = "gemini-2.5-pro-exp-03-25" # Or your preferred model (target protein ID)
 # --- End Permanent Genome Sequence & Initial Config ---
 
