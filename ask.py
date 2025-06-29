@@ -284,19 +284,6 @@ if __name__ == "__main__":
         except Exception:
             print("Could not retrieve final prompt feedback from the stream.")
     
-    except ImportError:
-         print("\nERROR: The 'google-generativeai' expression machinery library is not installed.", file=sys.stderr)
-         print("Please install it using: pip install google-generativeai", file=sys.stderr)
-         sys.exit(1)
-    except exceptions.DeadlineExceeded as e:
-        end_time = time.time()
-        print(f"\nERROR: Request timed out after {end_time - start_time:.2f} seconds (limit: 60s).", file=sys.stderr)
-        if not first_segment_received:
-            print("   Timeout occurred before receiving the first chunk (network/initialization issue?).", file=sys.stderr)
-        else:
-            print("   Timeout occurred mid-stream.", file=sys.stderr)
-        print(f"   Original exception: {e}", file=sys.stderr)
-        sys.exit(1)
     except Exception as e:
         print(f"\nAn error occurred during gene expression (API call): {e}", file=sys.stderr)
         traceback.print_exc()
