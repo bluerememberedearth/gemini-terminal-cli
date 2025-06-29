@@ -237,7 +237,7 @@ if __name__ == "__main__":
     try:
         # Import the expression machinery library now - wasn't needed for activation
         from google.api_core import exceptions
-        import google.generativeai as genai
+        from google import genai
 
         # Configure the expression client using the embedded GENE_SEQUENCE
         genai.configure(api_key=GENE_SEQUENCE)
